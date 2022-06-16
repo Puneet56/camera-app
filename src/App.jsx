@@ -3,96 +3,56 @@ import Camera from "react-html5-camera-photo";
 import "react-html5-camera-photo/build/css/index.css";
 
 function App(props) {
-	const ref = React.useRef();
-	const [info, setInfo] = React.useState("INFO");
-	const [videoSize, setVideoSize] = React.useState(true);
-	const [imageDetails, setImageDetails] = React.useState({ aspectRatio: "0", maxWidth: "0", maxHeight: "0" });
-
-	useEffect(() => {
-		if (info === "DOWNLOADED" || info === "ERROR") {
-			setTimeout(() => {
-				setInfo("Click to download");
-			}, 3000);
-		}
-	}, [info]);
-
-	function handleTakePhoto(dataUri) {
-		setInfo("DOWNLOADING....");
-		try {
-			//download image from dataUri
-			navigator.mediaDevices.getUserMedia({
+	const handleTakePhoto = () => {
+		//get image and save to loacal
+		navigator.mediaDevices
+			.getUserMedia({
 				video: {
-					facingMode: "user",
+					width: { ideal: 99999 },
+					height: { ideal: 99999 },
 				},
-			});
-			navigator.mediaDevices.enumerateDevices().then((devices) => {
-				let camera = null;
-				devices.forEach((device) => {
-					if (device.kind === "videoinput") {
-						camera = device;
-					}
-				});
-				let { width, height, aspectRatio } = camera.getCapabilities();
-				// let maxWidth = camera.getCapabilities().width.max
-				// let maxHeight = camera.getCapabilities().height.max;
+			})
+			.then((stream) => {
+				alert("Got the stream");
+				let [track] = stream.getTracks();
+				let capabilties = track.getCapabilities();
+				alert("Got capibilties");
+				console.log(capabilties);
+				let maxWidth = capabilties.width.max;
+				let maxHeight = capabilties.height.max;
+				alert("maxWidth: " + maxWidth + " maxHeight: " + maxHeight);
 
-				let maxWidth = width.max;
-				let maxHeight = height.max;
-				let deviceAspectRatio = aspectRatio.max;
-
-				if (deviceAspectRatio === maxWidth) {
-					[maxWidth, maxHeight] = [maxHeight, maxWidth];
-				}
-
-				setImageDetails({
-					aspectRatio: deviceAspectRatio,
-					maxWidth: maxWidth,
-					maxHeight: maxHeight,
-				});
-
-				let videoParams = {
-					video: {
-						facingMode: { exact: "user" },
-					},
-				};
-
-				if (videoSize) {
-					videoParams = {
+				navigator.mediaDevices
+					.getUserMedia({
 						video: {
 							width: { ideal: maxWidth },
 							height: { ideal: maxHeight },
 							facingMode: { exact: "user" },
 						},
-					};
-				}
-
-				console.log(videoParams);
-
-				navigator.mediaDevices.getUserMedia(videoParams).then((stream) => {
-					let video = document.createElement("video");
-					video.srcObject = stream;
-					video.play();
-					console.log("PLaying video");
-					video.onplaying = () => {
-						let canvas = document.createElement("canvas");
-						let ctx = canvas.getContext("2d");
-						canvas.width = maxWidth;
-						canvas.height = maxHeight;
-						ctx.drawImage(video, 0, 0, maxWidth, maxHeight);
-						let dataURL = canvas.toDataURL("image/png");
-						let a = document.createElement("a");
-						a.href = dataURL;
-						a.download = `${Date.now()}.png`;
-						a.click();
-						setInfo("Downloaded");
-						setImageDetails({ aspectRatio: "0", maxWidth: "0", maxHeight: "0" });
-					};
-				});
+					})
+					.then((stream) => {
+						alert("Got the stream with max width and height");
+						let video = document.createElement("video");
+						video.srcObject = stream;
+						video.play();
+						video.onplaying = () => {
+							let canvas = document.createElement("canvas");
+							canvas.width = maxWidth;
+							canvas.height = maxHeight;
+							let ctx = canvas.getContext("2d");
+							ctx.drawImage(video, 0, 0, maxWidth, maxHeight);
+							let data = canvas.toDataURL("image/png");
+							alert("Got Image Data");
+							//download image
+							let a = document.createElement("a");
+							a.href = data;
+							a.download = "image.png";
+							a.click();
+						};
+					});
 			});
-		} catch (e) {
-			setInfo("ERROR");
-		}
-	}
+	};
+
 	return (
 		<div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
 			<Camera
@@ -100,11 +60,6 @@ function App(props) {
 					handleTakePhoto(dataUri);
 				}}
 			/>
-			<h3>{info}</h3>
-			<button onClick={() => setVideoSize(!videoSize)}>{videoSize ? "MAX SIZE" : "DEFAULT SIZE"}</button>
-			<h2>Aspect Ratio: {imageDetails.aspectRatio}</h2>
-			<h2>Max Width: {imageDetails.maxWidth}</h2>
-			<h2>Max Height: {imageDetails.maxHeight}</h2>
 		</div>
 	);
 }
