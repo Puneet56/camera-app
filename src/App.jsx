@@ -34,19 +34,26 @@ function App(props) {
 						alert("Got the stream with max width and height");
 						let video = document.createElement("video");
 						video.srcObject = stream;
+						alert("Trying to Playing Video");
 						video.play();
 						video.onplaying = () => {
+							alert("Playing Video");
 							let canvas = document.createElement("canvas");
+							alert("Creating Canvas");
 							canvas.width = maxWidth;
 							canvas.height = maxHeight;
+							alert("Getting Context");
 							let ctx = canvas.getContext("2d");
+							alert("Drawing Video");
 							ctx.drawImage(video, 0, 0, maxWidth, maxHeight);
 							let data = canvas.toDataURL("image/png");
 							alert("Got Image Data");
 							//download image
 							let a = document.createElement("a");
 							a.href = data;
+							alert("Creating Link");
 							a.download = "image.png";
+							alert("Downloading Image");
 							a.click();
 						};
 					});
